@@ -5,15 +5,19 @@ import AddOfferDrawer from "../add-offer-drawer/add-offer-drawer";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 
-const BottomBar = () => {
+type Props = {
+  onSuccess: () => void;
+};
+
+const BottomBar = ({ onSuccess }: Props) => {
   const { data: session } = useSession();
 
   return (
-    <nav className="sticky bottom-0 bg-background border-t flex justify-around py-2">
+    <nav className="w-full fixed bottom-0 bg-background border-t flex justify-around py-2">
       <Link href="/" className="flex flex-col items-center text-xs">
         <Home size={20} /> Трекер
       </Link>
-      <AddOfferDrawer />
+      <AddOfferDrawer onSuccess={onSuccess} />
       <Link
         href={`https://docs.google.com/spreadsheets/d/${session?.user.sheet?.sheetId}`}
         target="_blank"

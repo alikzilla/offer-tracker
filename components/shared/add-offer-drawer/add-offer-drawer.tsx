@@ -2,7 +2,11 @@ import { Sheet, SheetTrigger, SheetContent, SheetTitle } from "@/components/ui";
 import { AddOfferForm } from "@/components/shared";
 import { Plus } from "lucide-react";
 
-const AddOfferDrawer = () => {
+type Props = {
+  onSuccess: () => void;
+};
+
+const AddOfferDrawer = ({ onSuccess }: Props) => {
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -19,7 +23,11 @@ const AddOfferDrawer = () => {
         <SheetTitle className="text-lg font-semibold mb-4">
           Новая вакансия
         </SheetTitle>
-        <AddOfferForm />
+        <AddOfferForm
+          onSuccess={() => {
+            onSuccess();
+          }}
+        />
       </SheetContent>
     </Sheet>
   );

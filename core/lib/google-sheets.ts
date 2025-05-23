@@ -5,7 +5,8 @@ import { Session } from "next-auth";
 
 export async function getSheetsClient() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.accessToken || !session.user.refreshToken) {
+  if (!session?.user?.accessToken) {
+    console.log(session);
     throw new Error("Not authenticated");
   }
 

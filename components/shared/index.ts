@@ -7,3 +7,4 @@ export { default as AddOfferDrawer } from "./add-offer-drawer/add-offer-drawer";
 export { default as AddOfferForm } from "./add-offer-form/add-offer-form";
 export { default as OfferCard } from "./offer-card/offer-card";
 export { default as SheetStatus } from "./status-sheet/status-sheet";
+export { default as StatusBar } from "./status-bar/status-bar";

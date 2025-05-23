@@ -15,14 +15,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ru">
-      <body className="min-h-screen flex flex-col bg-background">
-        <AuthProvider>
-          <Header />
-
-          <main className="flex-1">{children}</main>
-
-          <BottomBar />
-        </AuthProvider>
+      <body>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

@@ -11,9 +11,15 @@ export const STATUS_META = {
 } as const;
 
 export type Offer = {
-  id: string;
+  id: number;
   company: string;
-  position: string;
+  vacancy: string;
   status: keyof typeof STATUS_META;
   appliedAt: string;
+  updatedAt: string;
+  link?: string;
+  location?: string;
+  stack?: string;
+  contacts?: string;
+  notes?: string;
 };

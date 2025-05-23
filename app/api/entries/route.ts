@@ -2,6 +2,19 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/core/lib/auth";
 import { getSheetsClient, getSpreadsheetId } from "@/core/lib/google-sheets";
+import { STATUS_META } from "@/core/lib/offer";
+
+type EntryRequest = {
+  company: string;
+  vacancy: string;
+  status: keyof typeof STATUS_META; // ← here TS knows this is one of the keys
+  appliedAt: string;
+  link?: string;
+  location?: string;
+  stack?: string;
+  contacts?: string;
+  notes?: string;
+};
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -39,6 +52,8 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.error();
 
+  const body = (await req.json()) as EntryRequest;
+
   const {
     company,
     vacancy,
@@ -49,13 +64,15 @@ export async function POST(req: Request) {
     stack = "",
     contacts = "",
     notes = "",
-  } = await req.json();
+  } = body;
 
   const sheets = await getSheetsClient();
   const spreadsheetId = getSpreadsheetId(session);
 
   // Текущая дата как "последний апдейт"
   const updatedAt = new Date().toISOString().slice(0, 10);
+
+  const statusLabel = STATUS_META[status].label;
 
   await sheets.spreadsheets.values.append({
     spreadsheetId,
@@ -66,7 +83,7 @@ export async function POST(req: Request) {
         [
           company,
           vacancy,
-          status,
+          statusLabel,
           appliedAt,
           updatedAt,
           link,

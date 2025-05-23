@@ -10,3 +10,5 @@ export * from "./dialog/dialog";
 export * from "./collapsible/collapsible";
 export * from "./label/label";
 export * from "./select/select";
+export * from "./textarea/textarea";
+export * from "./card/card";

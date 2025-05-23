@@ -1,216 +1,157 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { toast } from "sonner";
+import { Offer } from "@/core/lib/offer";
+import { STATUS_META } from "@/core/lib/offer";
 import {
   Button,
   Input,
   Label,
+  Textarea,
   Select,
-  SelectContent,
-  SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectContent,
+  SelectItem,
 } from "@/components/ui";
-import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 
-const STATUS_OPTIONS = [
-  "Applied",
-  "Interview Scheduled",
-  "Technical Test",
-  "Offer Received",
-  "Rejected",
-] as const;
-
-type FormData = {
-  company: string;
-  position: string;
+type EntryForm = Omit<Offer, "id"> & {
   link: string;
-  status: (typeof STATUS_OPTIONS)[number];
-  comments: string;
-  contactPerson: string;
-  contactInfo: string;
-  nextStep: string;
-  reminder: string;
+  notes: string;
 };
 
-const INITIAL_FORM_DATA: FormData = {
-  company: "",
-  position: "",
-  link: "",
-  status: "Applied",
-  comments: "",
-  contactPerson: "",
-  contactInfo: "",
-  nextStep: "",
-  reminder: "",
+type Props = {
+  onSuccess: () => void;
 };
 
-const AddOfferForm = ({ onSuccess }: { onSuccess?: () => void }) => {
-  const [formData, setFormData] = useState<FormData>(INITIAL_FORM_DATA);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { data: session } = useSession();
+export default function AddOfferForm({ onSuccess }: Props) {
+  const [form, setForm] = useState<EntryForm>({
+    company: "",
+    vacancy: "",
+    status: "response",
+    appliedAt: new Date().toISOString().slice(0, 10),
+    link: "",
+    notes: "",
+  });
+  const [isLoading, setLoading] = useState(false);
+
+  const handleChange = <K extends keyof EntryForm>(
+    key: K,
+    value: EntryForm[K]
+  ) => {
+    setForm((f) => ({ ...f, [key]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
+    setLoading(true);
     try {
-      if (!session?.user?.sheet?.sheetId) {
-        throw new Error("No sheet available");
-      }
-
-      const response = await fetch("/api/offers", {
+      const res = await fetch("/api/entries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ offer: formData }),
+        body: JSON.stringify(form),
       });
-
-      if (!response.ok) throw new Error("Failed to add offer");
-
-      toast.success("Offer added successfully!");
-      setFormData(INITIAL_FORM_DATA);
-      onSuccess?.();
-    } catch (error) {
-      toast.error("Failed to add offer");
+      if (!res.ok) throw new Error("Не удалось добавить");
+      toast.success("Добавлено");
+      onSuccess();
+      setForm((f) => ({
+        ...f,
+        company: "",
+        vacancy: "",
+        link: "",
+        notes: "",
+      }));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Ошибка";
+      toast.error(msg);
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="company">Company</Label>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 gap-4">
+        <div className="space-y-1">
+          <Label htmlFor="company">Компания</Label>
           <Input
             id="company"
-            name="company"
-            value={formData.company}
-            onChange={handleChange}
+            value={form.company}
+            onChange={(e) => handleChange("company", e.target.value)}
+            placeholder="Название компании"
             required
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="position">Position</Label>
+
+        <div className="space-y-1">
+          <Label htmlFor="vacancy">Вакансия</Label>
           <Input
-            id="position"
-            name="position"
-            value={formData.position}
-            onChange={handleChange}
+            id="vacancy"
+            value={form.vacancy}
+            onChange={(e) => handleChange("vacancy", e.target.value)}
+            placeholder="Должность"
             required
           />
         </div>
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="link">Job Posting URL</Label>
-        <Input
-          id="link"
-          name="link"
-          type="url"
-          value={formData.link}
-          onChange={handleChange}
-          required
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Status</Label>
+        <div className="space-y-1">
+          <Label htmlFor="status">Статус</Label>
           <Select
-            value={formData.status}
-            onValueChange={(value) =>
-              setFormData((prev) => ({
-                ...prev,
-                status: value as FormData["status"],
-              }))
+            value={form.status}
+            onValueChange={(val) =>
+              handleChange("status", val as EntryForm["status"])
             }
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Select status" />
+            <SelectTrigger id="status">
+              <SelectValue placeholder="Выберите статус" />
             </SelectTrigger>
             <SelectContent>
-              {STATUS_OPTIONS.map((status) => (
-                <SelectItem key={status} value={status}>
-                  {status}
+              {Object.entries(STATUS_META).map(([key, { label }]) => (
+                <SelectItem key={key} value={key}>
+                  {label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="nextStep">Next Step</Label>
+
+        <div className="space-y-1">
+          <Label htmlFor="appliedAt">Дата отклика</Label>
           <Input
-            id="nextStep"
-            name="nextStep"
-            value={formData.nextStep}
-            onChange={handleChange}
+            id="appliedAt"
+            type="date"
+            value={form.appliedAt}
+            onChange={(e) => handleChange("appliedAt", e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor="link">Ссылка на вакансию</Label>
+          <Input
+            id="link"
+            type="url"
+            value={form.link}
+            onChange={(e) => handleChange("link", e.target.value)}
+            placeholder="https://..."
+          />
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor="notes">Notes</Label>
+          <Textarea
+            id="notes"
+            value={form.notes}
+            onChange={(e) => handleChange("notes", e.target.value)}
+            placeholder="Дополнительные заметки"
+            rows={3}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="contactPerson">Contact Person</Label>
-          <Input
-            id="contactPerson"
-            name="contactPerson"
-            value={formData.contactPerson}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="contactInfo">Contact Email/Phone</Label>
-          <Input
-            id="contactInfo"
-            name="contactInfo"
-            value={formData.contactInfo}
-            onChange={handleChange}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="comments">Comments</Label>
-        <Input
-          id="comments"
-          name="comments"
-          value={formData.comments}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="reminder">Reminder</Label>
-        <Input
-          id="reminder"
-          name="reminder"
-          type="date"
-          value={formData.reminder}
-          onChange={handleChange}
-        />
-      </div>
-
-      <Button type="submit" disabled={isSubmitting} className="w-full">
-        {isSubmitting ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Adding...
-          </>
-        ) : (
-          "Add Offer"
-        )}
+      <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
+        {isLoading ? "Добавляем..." : "Добавить отклик"}
       </Button>
     </form>
   );
-};
-
-export default AddOfferForm;
+}
