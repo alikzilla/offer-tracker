@@ -31,6 +31,7 @@ export default function AddOfferForm({ onSuccess }: Props) {
     vacancy: "",
     status: "response",
     appliedAt: new Date().toISOString().slice(0, 10),
+    updatedAt: new Date().toISOString(),
     link: "",
     notes: "",
   });
