@@ -32,6 +32,8 @@ import { Edit2, Save, X } from "lucide-react";
 
 type Props = {
   offer: Offer;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onUpdate: () => void;
 };
 
@@ -47,7 +49,12 @@ Object.entries(STATUS_META).forEach(([key, { label, color }]) => {
   };
 });
 
-export default function OfferCard({ offer, onUpdate }: Props) {
+export default function OfferCard({
+  offer,
+  open,
+  onOpenChange,
+  onUpdate,
+}: Props) {
   const [form, setForm] = useState<Omit<Offer, "id">>(offer);
   const [isSaving, setSaving] = useState(false);
 
@@ -62,6 +69,7 @@ export default function OfferCard({ offer, onUpdate }: Props) {
       if (!res.ok) throw new Error("Ошибка при сохранении");
       toast.success("Сохранено");
       onUpdate();
+      onOpenChange(false);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Неизвестная ошибка");
     } finally {
@@ -101,7 +109,7 @@ export default function OfferCard({ offer, onUpdate }: Props) {
           <p className="text-sm whitespace-pre-wrap">{offer.notes}</p>
         )}
 
-        <Dialog>
+        <Dialog open={open} onOpenChange={onOpenChange}>
           <DialogTrigger asChild className="absolute bottom-0 right-6">
             <Button variant="ghost" size="icon">
               <Edit2 className="h-4 w-4" />

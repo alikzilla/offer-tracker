@@ -6,10 +6,12 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 
 type Props = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 };
 
-const BottomBar = ({ onSuccess }: Props) => {
+const BottomBar = ({ open, onOpenChange, onSuccess }: Props) => {
   const { data: session } = useSession();
 
   return (
@@ -17,7 +19,13 @@ const BottomBar = ({ onSuccess }: Props) => {
       <Link href="/" className="flex flex-col items-center text-xs">
         <Home size={20} /> Трекер
       </Link>
-      <AddOfferDrawer onSuccess={onSuccess} />
+      <AddOfferDrawer
+        open={open}
+        onOpenChange={onOpenChange}
+        onSuccess={() => {
+          onOpenChange(false);
+        }}
+      />
       <Link
         href={`https://docs.google.com/spreadsheets/d/${session?.user.sheet?.sheetId}`}
         target="_blank"

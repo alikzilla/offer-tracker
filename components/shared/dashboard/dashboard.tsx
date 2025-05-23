@@ -12,6 +12,7 @@ const Dashboard = ({
   mutate: () => void;
 }) => {
   const [filter, setFilter] = useState<string>("all");
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
   const filtered =
     filter === "all" ? offers : offers.filter((o) => o.status === filter);
@@ -25,7 +26,16 @@ const Dashboard = ({
       ) : (
         <div className="space-y-3 px-4">
           {filtered.map((offer) => (
-            <OfferCard key={offer.id} offer={offer} onUpdate={() => mutate()} />
+            <OfferCard
+              key={offer.id}
+              offer={offer}
+              open={isAddOpen}
+              onOpenChange={setIsAddOpen}
+              onUpdate={() => {
+                mutate();
+                setIsAddOpen(false);
+              }}
+            />
           ))}
         </div>
       )}

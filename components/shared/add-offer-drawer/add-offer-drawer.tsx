@@ -3,12 +3,14 @@ import { AddOfferForm } from "@/components/shared";
 import { Plus } from "lucide-react";
 
 type Props = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 };
 
-const AddOfferDrawer = ({ onSuccess }: Props) => {
+const AddOfferDrawer = ({ open, onOpenChange, onSuccess }: Props) => {
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetTrigger asChild>
         <button className="h-[60px] w-[60px] flex items-center justify-center rounded-full bg-primary text-white p-4 -mt-8 shadow-lg">
           <Plus size={24} />
@@ -26,6 +28,7 @@ const AddOfferDrawer = ({ onSuccess }: Props) => {
         <AddOfferForm
           onSuccess={() => {
             onSuccess();
+            onOpenChange(false);
           }}
         />
       </SheetContent>

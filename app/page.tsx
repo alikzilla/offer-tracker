@@ -10,6 +10,8 @@ import {
 import { fetcher } from "@/core/lib/fetcher";
 import { Offer } from "@/core/lib/offer";
 import { useSession } from "next-auth/react";
+import { ConnectHHButton } from "@/components/shared/connect-hh-button/connect-hh-button";
+import { useState } from "react";
 
 export default function App() {
   const { data: session } = useSession();
@@ -19,6 +21,8 @@ export default function App() {
     isLoading,
     mutate,
   } = useSWR<Offer[]>("/api/entries", fetcher);
+
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
   return (
     <section className="h-screen flex flex-col bg-background">
@@ -46,8 +50,11 @@ export default function App() {
       )}
 
       <BottomBar
+        open={isAddOpen}
+        onOpenChange={setIsAddOpen}
         onSuccess={() => {
           mutate();
+          setIsAddOpen(false);
         }}
       />
     </section>
