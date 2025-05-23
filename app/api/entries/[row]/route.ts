@@ -1,16 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/core/lib/auth";
 import { getSheetsClient, getSpreadsheetId } from "@/core/lib/google-sheets";
 
 export async function PATCH(
-  req: Request,
-  { params }: { params: { row: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ row: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.error();
 
-  const row = Number(params.row);
+  const row = Number((await params).row);
   if (isNaN(row) || row < 2) {
     return NextResponse.json({ error: "Invalid row" }, { status: 400 });
   }
@@ -29,10 +29,8 @@ export async function PATCH(
 
   const sheets = await getSheetsClient();
   const spreadsheetId = getSpreadsheetId(session);
-
   const updatedAt = new Date().toISOString().slice(0, 10);
 
-  // Обновляем всю строку целиком (A{row}:J{row})
   await sheets.spreadsheets.values.update({
     spreadsheetId,
     range: `Отклики!A${row}:J${row}`,

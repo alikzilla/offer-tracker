@@ -1,19 +1,19 @@
 "use client";
 
-import { Button } from "@/components/ui";
-import { Input } from "@/components/ui";
-import { Label } from "@/components/ui";
+import { useState } from "react";
+import { useSession } from "next-auth/react";
 import {
+  Button,
+  Input,
+  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui";
-import { Loader2 } from "lucide-react";
-import { useSession } from "next-auth/react";
-import { useState } from "react";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 const STATUS_OPTIONS = [
   "Applied",
@@ -47,7 +47,7 @@ const INITIAL_FORM_DATA: FormData = {
   reminder: "",
 };
 
-export const AddOfferForm = ({ onSuccess }: { onSuccess?: () => void }) => {
+const AddOfferForm = ({ onSuccess }: { onSuccess?: () => void }) => {
   const [formData, setFormData] = useState<FormData>(INITIAL_FORM_DATA);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { data: session } = useSession();
@@ -212,3 +212,5 @@ export const AddOfferForm = ({ onSuccess }: { onSuccess?: () => void }) => {
     </form>
   );
 };
+
+export default AddOfferForm;

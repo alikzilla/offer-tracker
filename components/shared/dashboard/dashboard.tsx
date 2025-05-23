@@ -1,14 +1,13 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import StatusTabs from "../status-bar/status-bar";
 import { useState } from "react";
-import { CreateSheetDialog } from "../create-sheet-dialog/create-sheet-dialog";
+import { CreateSheetDialog } from "../";
 import { Offer } from "@/core/lib/offer";
 import useSWR from "swr";
 import OfferCard from "../offer-card/offer-card";
 
-export default function MobileDashboard() {
+const Dashboard = () => {
   const { data: session } = useSession();
   const [filter, setFilter] = useState<string>("all");
   const { data: offers } = useSWR<Offer[]>("/api/entries");
@@ -53,4 +52,6 @@ export default function MobileDashboard() {
       </div>
     </div>
   );
-}
+};
+
+export default Dashboard;

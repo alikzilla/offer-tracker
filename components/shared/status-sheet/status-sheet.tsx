@@ -1,10 +1,10 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { Button } from "@/components/ui";
 import { toast } from "sonner";
+import { Button } from "@/components/ui";
+import { CreateSheetDialog } from "@/components/shared";
 import { Loader2, ExternalLink } from "lucide-react";
-import { CreateSheetDialog } from "../create-sheet-dialog/create-sheet-dialog";
 
 const SheetStatus = () => {
   const { data: session, update } = useSession();
@@ -30,7 +30,7 @@ const SheetStatus = () => {
     <div className="w-full max-w-2xl p-4 border rounded-lg bg-muted">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-medium">{session.user.sheet.name}</h3>
+          <h3 className="font-medium">{session.user.sheet.title}</h3>
           <p className="text-sm text-muted-foreground">
             Created on{" "}
             {new Date(session.user.sheet.createdAt).toLocaleDateString()}

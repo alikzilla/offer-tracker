@@ -1,32 +1,20 @@
 "use client";
 
-import { signIn, signOut, useSession } from "next-auth/react";
+import { Button } from "@/components/ui";
+import { signIn, useSession } from "next-auth/react";
+import Image from "next/image";
 
-export default function AuthButton() {
-  const { data: session, status } = useSession();
+const AuthButton = () => {
+  const { status } = useSession();
 
   if (status === "loading") return <p>Loading...</p>;
 
-  if (status === "authenticated") {
-    return (
-      <div className="flex items-center gap-2">
-        <p>Hello, {session.user?.name || session.user?.email}</p>
-        <button
-          onClick={() => signOut()}
-          className="bg-red-500 text-white px-4 py-2 rounded"
-        >
-          Sign Out
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <button
-      onClick={() => signIn("google")}
-      className="bg-blue-500 text-white px-4 py-2 rounded"
-    >
-      Sign In
-    </button>
+    <Button onClick={() => signIn("google")} variant={"outline"}>
+      <Image src={"/google.png"} alt="google logo" width={20} height={20} />
+      <span>Sign In With Google</span>
+    </Button>
   );
-}
+};
+
+export default AuthButton;

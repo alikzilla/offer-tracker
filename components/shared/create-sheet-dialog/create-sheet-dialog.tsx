@@ -16,7 +16,7 @@ import {
 
 import { Loader2, PlusCircle } from "lucide-react";
 
-export const CreateSheetDialog = () => {
+const CreateSheetDialog = () => {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("My Offer Tracker");
   const [isCreating, setIsCreating] = useState(false);
@@ -88,3 +88,5 @@ export const CreateSheetDialog = () => {
     </Dialog>
   );
 };
+
+export default CreateSheetDialog;

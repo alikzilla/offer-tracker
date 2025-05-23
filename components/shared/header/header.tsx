@@ -1,16 +1,16 @@
 "use client";
 
-import { Button } from "@/components/ui";
-import { ChevronDown, Home, FileText, User } from "lucide-react";
 import { useSession } from "next-auth/react";
-import AuthButton from "../auth-button/auth-button";
+import Link from "next/link";
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu/dropdown-menu";
-import Link from "next/link";
+} from "@/components/ui";
+import { AuthButton } from "@/components/shared";
+import { ChevronDown, User } from "lucide-react";
 
 const Header = () => {
   const { data: session } = useSession();

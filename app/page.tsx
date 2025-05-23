@@ -1,5 +1,5 @@
-import MobileDashboard from "@/components/shared/dashboard/dashboard";
+import { Dashboard } from "@/components/shared/";
 
 export default function App() {
-  return <MobileDashboard />;
+  return <Dashboard />;
 }

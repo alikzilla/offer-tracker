@@ -1,7 +1,7 @@
+import React from "react";
 import AuthProvider from "@/components/providers/auth-provider";
 import { Header, BottomBar } from "@/components/shared";
 import "./globals.css";
-import React from "react";
 
 export const metadata = {
   title: "Offer Tracker",

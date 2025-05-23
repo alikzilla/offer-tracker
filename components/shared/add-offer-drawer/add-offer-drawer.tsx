@@ -1,12 +1,12 @@
 import { Sheet, SheetTrigger, SheetContent, SheetTitle } from "@/components/ui";
+import { AddOfferForm } from "@/components/shared";
 import { Plus } from "lucide-react";
-import { AddOfferForm } from "../add-offer-form/add-offer-form";
 
 const AddOfferDrawer = () => {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <button className="rounded-full bg-primary text-white p-4 -mt-8 shadow-lg">
+        <button className="h-[60px] w-[60px] flex items-center justify-center rounded-full bg-primary text-white p-4 -mt-8 shadow-lg">
           <Plus size={24} />
         </button>
       </SheetTrigger>
