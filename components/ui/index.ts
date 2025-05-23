@@ -1,6 +1,7 @@
-export { Button } from "./button/button";
+export * from "./badge/badge";
+export * from "./button/button";
 export * from "./dropdown-menu/dropdown-menu";
-export { Input } from "./input/input";
+export * from "./input/input";
 export * from "./sheet/sheet";
 export * from "./sonner/sonner";
 export * from "./table/table";

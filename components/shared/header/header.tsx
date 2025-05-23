@@ -16,7 +16,7 @@ const Header = () => {
   const { data: session } = useSession();
 
   return (
-    <header className="flex items-center justify-between p-4 border-b shadow-sm sticky top-0 bg-white z-10">
+    <header className="w-full flex items-center justify-between p-4 border-b shadow-sm fixed top-0 bg-white z-10">
       <div className="flex items-center gap-2">
         <span className="text-lg font-semibold">OfferTracker</span>
       </div>

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Loader2, ExternalLink } from "lucide-react";
 import { CreateSheetDialog } from "../create-sheet-dialog/create-sheet-dialog";
 
-export const SheetStatus = () => {
+const SheetStatus = () => {
   const { data: session, update } = useSession();
 
   if (!session?.user) {
@@ -56,3 +56,5 @@ export const SheetStatus = () => {
     </div>
   );
 };
+
+export default SheetStatus;

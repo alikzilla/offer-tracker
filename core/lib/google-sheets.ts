@@ -1,50 +1,29 @@
 import { google } from "googleapis";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/core/lib/auth";
+import { Session } from "next-auth";
 
-export async function getGoogleSheetsClient() {
+export async function getSheetsClient() {
   const session = await getServerSession(authOptions);
-
-  if (!session?.user?.accessToken) {
-    throw new Error("Unauthorized");
+  if (!session?.user?.accessToken || !session.user.refreshToken) {
+    throw new Error("Not authenticated");
   }
 
-  const auth = new google.auth.OAuth2();
-  auth.setCredentials({ access_token: session.user.accessToken });
+  const oauth2 = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET
+  );
+  oauth2.setCredentials({
+    access_token: session.user.accessToken,
+    refresh_token: session.user.refreshToken,
+  });
 
-  return google.sheets({ version: "v4", auth });
+  return google.sheets({ version: "v4", auth: oauth2 });
 }
 
-export async function deleteGoogleSheet(
-  spreadsheetId: string,
-  accessToken: string
-) {
-  const auth = new google.auth.OAuth2();
-  auth.setCredentials({ access_token: accessToken });
-
-  const drive = google.drive({ version: "v3", auth });
-
-  try {
-    await drive.files.delete({
-      fileId: spreadsheetId,
-    });
-    return true;
-  } catch (error) {
-    console.error("Error deleting Google Sheet:", error);
-    throw error;
+export function getSpreadsheetId(session: Session) {
+  if (!session.user.sheet?.sheetId) {
+    throw new Error("Sheet not created");
   }
+  return session.user.sheet.sheetId;
 }
-
-export const DEFAULT_HEADERS = [
-  "№",
-  "Дата отклика",
-  "Компания",
-  "Вакансия",
-  "Ссылка",
-  "Статус",
-  "Комментарий",
-  "Контактное лицо",
-  "Email/Телеграм",
-  "Следующий шаг",
-  "Напоминание",
-];

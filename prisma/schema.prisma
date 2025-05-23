@@ -55,7 +55,7 @@ model User {
 
 model Sheet {
   id        String   @id @default(cuid())
-  name      String
+  title     String
   sheetId   String   @unique
   createdAt DateTime @default(now())
   user      User?

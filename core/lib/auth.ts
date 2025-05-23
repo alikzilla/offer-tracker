@@ -61,6 +61,20 @@ export const authOptions: NextAuthOptions = {
         session.user.accessToken = token.accessToken as string;
       }
 
+      const u = await prisma.user.findUnique({
+        where: { id: token.id as string },
+        include: { sheet: true },
+      });
+
+      session.user.sheet = u?.sheet
+        ? {
+            id: u.sheet.id,
+            title: u.sheet.title,
+            sheetId: u.sheet.sheetId,
+            createdAt: u.sheet.createdAt.toISOString(),
+          }
+        : null;
+
       return session;
     },
   },

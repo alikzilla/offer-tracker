@@ -1,29 +1,33 @@
-import { DefaultSession } from "next-auth";
+// next-auth.d.ts
+import NextAuth, { DefaultSession, DefaultUser } from "next-auth";
 
 declare module "next-auth" {
-  interface User {
-    id: string;
-    sheet?: Sheet | null;
-    accessToken?: string;
-  }
-
   interface Session {
     user: {
+      /** From DefaultSession.user */
       id: string;
       name?: string | null;
-      email?: string | null;
+      email?: string;
       image?: string | null;
-      sheet?: Sheet | null;
+
+      /** Our custom fields */
       accessToken?: string;
+      refreshToken?: string;
+      expiresAt?: number;
+      sheet: {
+        id: string;
+        title: string;
+        sheetId: string;
+        createdAt: string;
+      } | null;
     };
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    id?: string;
     accessToken?: string;
     refreshToken?: string;
-    provider?: string;
+    expiresAt?: number;
   }
 }

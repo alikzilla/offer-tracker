@@ -1,221 +1,203 @@
-import {
-  deleteGoogleSheet,
-  getGoogleSheetsClient,
-} from "@/core/lib/google-sheets";
+// app/api/sheets/route.ts
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/core/lib/auth";
-import { NextResponse } from "next/server";
-import { DEFAULT_HEADERS } from "@/core/lib/google-sheets";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/core/lib/prisma";
+import { google } from "googleapis";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
+  if (!session?.user?.email) return NextResponse.error();
 
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // не даём создать более одной таблицы
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    include: { sheet: true },
+  });
+  if (user?.sheet) {
+    return NextResponse.json(
+      { error: "Sheet already exists" },
+      { status: 400 }
+    );
   }
 
-  const { title } = await req.json();
+  const { title } = (await req.json()) as { title: string };
 
-  try {
-    const existingSheet = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { sheet: true },
-    });
+  // === вот ключевая часть: используем OAuth2 клиента пользователя ===
+  const oauth2 = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET
+  );
+  oauth2.setCredentials({
+    access_token: session.user.accessToken,
+    refresh_token: session.user.refreshToken,
+  });
 
-    if (existingSheet?.sheet) {
-      return NextResponse.json(
-        { error: "You already have a sheet" },
-        { status: 400 }
-      );
-    }
+  // 1) создаём spreadsheet от имени пользователя
+  const sheets = google.sheets({ version: "v4", auth: oauth2 });
+  const createRes = await sheets.spreadsheets.create({
+    requestBody: {
+      properties: { title },
+      sheets: [{ properties: { title: "Отклики" } }],
+    },
+  });
+  const spreadsheetId = createRes.data.spreadsheetId!;
+  const sheetId = createRes.data.sheets![0].properties!.sheetId!;
 
-    const sheets = await getGoogleSheetsClient();
-
-    const resource = {
-      properties: { title: title || "My Offer Tracker" },
-      sheets: [
+  // 2) batchUpdate — инициализируем header, ширины, freeze, filter, валидацию и условное форматирование
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [
+        // A. Вставляем заголовки в строку 1
         {
-          properties: {
-            title: "Offers",
-            gridProperties: {
-              rowCount: 100,
-              columnCount: DEFAULT_HEADERS.length,
+          updateCells: {
+            start: { sheetId, rowIndex: 0, columnIndex: 0 },
+            rows: [
+              {
+                values: [
+                  "Компания",
+                  "Вакансия",
+                  "Статус",
+                  "Дата отклика",
+                  "Последний апдейт",
+                  "Ссылка",
+                  "Локация",
+                  "Стек",
+                  "Контакты",
+                  "Notes",
+                ].map((text) => ({
+                  userEnteredValue: { stringValue: text },
+                  userEnteredFormat: {
+                    backgroundColor: { red: 0.867, green: 0.867, blue: 0.867 },
+                    textFormat: { bold: true },
+                  },
+                })),
+              },
+            ],
+            fields:
+              "userEnteredValue,userEnteredFormat(backgroundColor,textFormat)",
+          },
+        },
+        // B. Устанавливаем ширины столбцов A–J
+        ...[25, 25, 15, 14, 18, 45, 18, 20, 25, 30].map((width, i) => ({
+          updateDimensionProperties: {
+            range: {
+              sheetId,
+              dimension: "COLUMNS",
+              startIndex: i,
+              endIndex: i + 1,
+            },
+            properties: { pixelSize: width * 7 }, // примерный множитель
+            fields: "pixelSize",
+          },
+        })),
+        // C. Freeze header
+        {
+          updateSheetProperties: {
+            properties: { sheetId, gridProperties: { frozenRowCount: 1 } },
+            fields: "gridProperties.frozenRowCount",
+          },
+        },
+        // D. Auto-filter на A1:J1
+        {
+          setBasicFilter: {
+            filter: {
+              range: {
+                sheetId,
+                startRowIndex: 0,
+                endRowIndex: 1,
+                startColumnIndex: 0,
+                endColumnIndex: 10,
+              },
             },
           },
-          data: [
-            {
-              rowData: [
+        },
+        // E. DataValidation для C2:C5000
+        {
+          repeatCell: {
+            range: {
+              sheetId,
+              startRowIndex: 1,
+              endRowIndex: 5000,
+              startColumnIndex: 2,
+              endColumnIndex: 3,
+            },
+            cell: {
+              dataValidation: {
+                condition: {
+                  type: "ONE_OF_LIST",
+                  values: [
+                    { userEnteredValue: "Отклик" },
+                    { userEnteredValue: "Просмотрено" },
+                    { userEnteredValue: "Приглашение" },
+                    { userEnteredValue: "Интервью" },
+                    { userEnteredValue: "Тестовое" },
+                    { userEnteredValue: "Оффер" },
+                    { userEnteredValue: "Принят" },
+                    { userEnteredValue: "Отказ" },
+                    { userEnteredValue: "Архив" },
+                  ],
+                },
+                showCustomUi: true,
+                strict: false,
+              },
+            },
+            fields: "dataValidation",
+          },
+        },
+        // F. Conditional formatting для каждого статуса
+        ...[
+          ["Отклик", "#D9D9D9"],
+          ["Просмотрено", "#FFF2CC"],
+          ["Приглашение", "#D9E1F2"],
+          ["Интервью", "#FFE699"],
+          ["Тестовое", "#F4B183"],
+          ["Оффер", "#C6E0B4"],
+          ["Принят", "#A9D08E"],
+          ["Отказ", "#F8CBAD"],
+          ["Архив", "#C0C0C0"],
+        ].map(([status, hex]) => ({
+          addConditionalFormatRule: {
+            rule: {
+              ranges: [
                 {
-                  values: DEFAULT_HEADERS.map((header) => ({
-                    userEnteredValue: { stringValue: header },
-                  })),
+                  sheetId,
+                  startRowIndex: 1,
+                  endRowIndex: 5000,
+                  startColumnIndex: 2,
+                  endColumnIndex: 3,
                 },
               ],
-            },
-          ],
-        },
-      ],
-    };
-
-    const response = await sheets.spreadsheets.create({
-      requestBody: resource,
-    });
-
-    const sheet = await prisma.sheet.create({
-      data: {
-        name: title || "My Offer Tracker",
-        sheetId: response.data.spreadsheetId!,
-        user: {
-          connect: { id: session.user.id },
-        },
-      },
-    });
-
-    return NextResponse.json({
-      spreadsheetId: response.data.spreadsheetId,
-      sheet,
-    });
-  } catch (error) {
-    console.error("Error creating sheet:", error);
-    return NextResponse.json(
-      { error: "Failed to create spreadsheet" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function GET() {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  try {
-    const userWithSheet = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      include: { sheet: true },
-    });
-
-    if (!userWithSheet?.sheet) {
-      return NextResponse.json({ sheet: null }, { status: 200 });
-    }
-
-    return NextResponse.json({ sheet: userWithSheet.sheet });
-  } catch (error) {
-    console.error("Error fetching sheet:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch sheet" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PUT(req: Request) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { title } = await req.json();
-
-  try {
-    const userWithSheet = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      include: { sheet: true },
-    });
-
-    if (!userWithSheet?.sheet) {
-      return NextResponse.json({ error: "No sheet found" }, { status: 404 });
-    }
-
-    const sheets = await getGoogleSheetsClient();
-
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: userWithSheet.sheet.sheetId,
-      requestBody: {
-        requests: [
-          {
-            updateSpreadsheetProperties: {
-              properties: {
-                title: title || "My Offer Tracker",
+              booleanRule: {
+                condition: {
+                  type: "CUSTOM_FORMULA",
+                  values: [{ userEnteredValue: `=$C2="${status}"` }],
+                },
+                format: {
+                  backgroundColor: {
+                    red: parseInt(hex.slice(1, 3), 16) / 255,
+                    green: parseInt(hex.slice(3, 5), 16) / 255,
+                    blue: parseInt(hex.slice(5, 7), 16) / 255,
+                  },
+                },
               },
-              fields: "title",
             },
+            index: 0,
           },
-        ],
-      },
-    });
+        })),
+      ],
+    },
+  });
 
-    const updatedSheet = await prisma.sheet.update({
-      where: { id: userWithSheet.sheet.id },
-      data: { name: title || "My Offer Tracker" },
-    });
+  // 3) сохраняем в БД
+  await prisma.sheet.create({
+    data: {
+      title,
+      sheetId: spreadsheetId,
+      user: { connect: { email: session.user.email } },
+    },
+  });
 
-    return NextResponse.json({ sheet: updatedSheet });
-  } catch (error) {
-    console.error("Error updating sheet:", error);
-    return NextResponse.json(
-      { error: "Failed to update spreadsheet" },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({ spreadsheetId, title }, { status: 201 });
 }
-
-// export async function DELETE(req: Request) {
-//   const session = await getServerSession(authOptions);
-
-//   if (!session?.user?.id || !session.user.accessToken) {
-//     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-//   }
-
-//   try {
-//     const { id } = await req.json();
-
-//     if (!id) {
-//       return NextResponse.json(
-//         { error: "Sheet ID is required" },
-//         { status: 400 }
-//       );
-//     }
-
-//     // Verify the sheet belongs to the user
-//     const sheet = await prisma.sheet.findUnique({
-//       where: {
-//         id: id,
-//         userId: session.user.id,
-//       },
-//     });
-
-//     if (!sheet) {
-//       return NextResponse.json(
-//         { error: "Sheet not found or access denied" },
-//         { status: 404 }
-//       );
-//     }
-
-//     // First delete from Google Sheets
-//     try {
-//       await deleteGoogleSheet(sheet.sheetId, session.user.accessToken);
-//     } catch (error) {
-//       console.error("Google Sheet deletion failed:", error);
-//     }
-
-//     // Then delete from database
-//     await prisma.sheet.delete({
-//       where: { id },
-//     });
-
-//     return NextResponse.json({ success: true }, { status: 200 });
-//   } catch (error) {
-//     console.error("Error deleting sheet:", error);
-//     return NextResponse.json(
-//       { error: "Internal server error" },
-//       { status: 500 }
-//     );
-//   }
-// }
