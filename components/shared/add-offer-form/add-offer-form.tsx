@@ -33,6 +33,7 @@ export default function AddOfferForm({ onSuccess }: Props) {
     appliedAt: new Date().toISOString().slice(0, 10),
     updatedAt: new Date().toISOString(),
     link: "",
+    contacts: "",
     notes: "",
   });
   const [isLoading, setLoading] = useState(false);
@@ -135,6 +136,17 @@ export default function AddOfferForm({ onSuccess }: Props) {
             value={form.link}
             onChange={(e) => handleChange("link", e.target.value)}
             placeholder="https://..."
+          />
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor="contacts">Контакты</Label>
+          <Input
+            id="contacts"
+            type="text"
+            value={form.contacts}
+            onChange={(e) => handleChange("contacts", e.target.value)}
+            placeholder="Контакты"
           />
         </div>
 

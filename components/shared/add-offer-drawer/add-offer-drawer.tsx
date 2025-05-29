@@ -18,10 +18,7 @@ const AddOfferDrawer = ({ open, onOpenChange, onSuccess }: Props) => {
       </SheetTrigger>
 
       {/* full-screen на < md */}
-      <SheetContent
-        side="bottom"
-        className="p-6 h-[90vh] md:h-auto md:w-[420px]"
-      >
+      <SheetContent side="bottom" className="p-6 h-[90vh] md:h-auto">
         <SheetTitle className="text-lg font-semibold mb-4">
           Новая вакансия
         </SheetTitle>

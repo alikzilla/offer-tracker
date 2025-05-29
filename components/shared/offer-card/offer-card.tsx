@@ -32,8 +32,6 @@ import { Edit2, Save, X } from "lucide-react";
 
 type Props = {
   offer: Offer;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   onUpdate: () => void;
 };
 
@@ -49,12 +47,8 @@ Object.entries(STATUS_META).forEach(([key, { label, color }]) => {
   };
 });
 
-export default function OfferCard({
-  offer,
-  open,
-  onOpenChange,
-  onUpdate,
-}: Props) {
+export default function OfferCard({ offer, onUpdate }: Props) {
+  const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Omit<Offer, "id">>(offer);
   const [isSaving, setSaving] = useState(false);
 
@@ -69,7 +63,7 @@ export default function OfferCard({
       if (!res.ok) throw new Error("Ошибка при сохранении");
       toast.success("Сохранено");
       onUpdate();
-      onOpenChange(false);
+      setOpen(false);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Неизвестная ошибка");
     } finally {
@@ -109,7 +103,7 @@ export default function OfferCard({
           <p className="text-sm whitespace-pre-wrap">{offer.notes}</p>
         )}
 
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild className="absolute bottom-0 right-6">
             <Button variant="ghost" size="icon">
               <Edit2 className="h-4 w-4" />
@@ -137,7 +131,7 @@ export default function OfferCard({
                 <Input
                   value={form.vacancy}
                   onChange={(e) =>
-                    setForm((f) => ({ ...f, position: e.target.value }))
+                    setForm((f) => ({ ...f, vacancy: e.target.value }))
                   }
                 />
               </div>
@@ -197,7 +191,11 @@ export default function OfferCard({
               </div>
             </div>
             <DialogFooter className="mt-4 flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => {}} disabled={isSaving}>
+              <Button
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={isSaving}
+              >
                 <X className="mr-2 h-4 w-4" /> Отмена
               </Button>
               <Button onClick={handleSave} disabled={isSaving}>

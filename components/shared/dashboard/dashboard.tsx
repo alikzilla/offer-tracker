@@ -18,7 +18,7 @@ const Dashboard = ({
     filter === "all" ? offers : offers.filter((o) => o.status === filter);
 
   return (
-    <div className="pt-[90px] flex flex-col pt-14">
+    <div className="pt-[90px] pb-[70px] flex flex-col pt-14">
       {filtered.length === 0 ? (
         <p className="text-center text-sm text-muted-foreground pt-10">
           Пока нет откликов
@@ -29,8 +29,6 @@ const Dashboard = ({
             <OfferCard
               key={offer.id}
               offer={offer}
-              open={isAddOpen}
-              onOpenChange={setIsAddOpen}
               onUpdate={() => {
                 mutate();
                 setIsAddOpen(false);
